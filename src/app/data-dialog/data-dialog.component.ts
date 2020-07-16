@@ -6,18 +6,50 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
   templateUrl: './data-dialog.component.html',
   styleUrls: ['./data-dialog.component.css']
 })
-export class DataDialogComponent implements OnInit {
+export class DataDialogComponent {
 
+  isDuplicate = false;
   constructor(
     public dialogRef: MatDialogRef<DataDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { type: string,operation:string, title: string }) { }
+    @Inject(MAT_DIALOG_DATA) public data: { lists: any[], operation: string, type: string, title: string }) { }
 
   onNoClick(): void {
     this.dialogRef.close();
   }
 
 
-  ngOnInit() {
+  validate() {
+    if (this.data.type == "list") {
+      this.isDuplicate = this.listDuplicate();
+    } else {
+      this.isDuplicate = this.taskDuplicate();
+
+    }
+
+
   }
+
+  listDuplicate(): boolean {
+    for (let l of this.data.lists) {
+      if (l.title == this.data.title) {
+        return true;
+      }
+    }
+    return false;
+
+  }// listDuplicate
+
+  taskDuplicate(): boolean {
+    for (let l of this.data.lists) {
+      for (let t of l.items) {
+        if (t == this.data.title) {
+          return true;
+        }
+      }
+    }
+    return false;
+
+  }// taskDuplicate
+
 
 }

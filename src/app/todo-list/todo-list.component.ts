@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DataDialogComponent } from '../data-dialog/data-dialog.component';
 import Swal from 'sweetalert2';
 import { ShortcutInput, KeyboardShortcutsComponent } from 'ng-keyboard-shortcuts';
+import { Subscription, Observable } from 'rxjs';
 @Component({
   selector: 'app-todo-list',
   templateUrl: './todo-list.component.html',
@@ -12,6 +13,7 @@ import { ShortcutInput, KeyboardShortcutsComponent } from 'ng-keyboard-shortcuts
 export class TodoListComponent {
   shortcuts: ShortcutInput[] = [];
   lists = [];
+  subscription: Subscription
 
   @ViewChild(KeyboardShortcutsComponent, { static: true }) private keyboard: KeyboardShortcutsComponent;
 
@@ -22,141 +24,95 @@ export class TodoListComponent {
     this.shortcuts.push(
       {
         key: "ctrl + l",
-        command: e => this.addList(),
+        command: e => this.add("list"),
         preventDefault: true
       }
     );
 
   }
 
-  addList(): void {
-    const dialogRef = this.dialog.open(DataDialogComponent, {
-      width: '250px',
-      data: { type: "list", operation: "add", title: '' }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      
-      if (result) {
-        this.lists.push({ title: result, items: [] })
-      }
-
-    });
-  }// addList
-
-  addTask(index: number) {
-
-    const dialogRef = this.dialog.open(DataDialogComponent, {
-      width: '250px',
-      data: { type: "task", operation: "add", title: '' }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed');
-      console.log("result", result);
-
-      if (result) {
-        this.lists[index].items.push(result);
-      }
-
-    });
-  }//addTask
 
 
-  editList(index, title) {
-    const dialogRef = this.dialog.open(DataDialogComponent, {
-      width: '250px',
-      data: { type: "list", operation: "edit", title: title }
-    });
 
-    dialogRef.afterClosed().subscribe(result => {    
+  add(type: string, listIndex?: number) {
 
-      if (result) {
-        const listObj = this.lists[index];
-        listObj.title = result;
-        this.lists.splice(index, 1, listObj)
-      }
+    this.subscription = this.openDialog({ type: type, operation: "add", title: '' })
+      .subscribe(result => {
+        if (result && type == "task") {
+          this.lists[listIndex].items.push(result);
+        } else if (result && type == "list") {
+          this.lists.push({ title: result, items: [] })
+        }
+      });
 
-    });
-  }//editList
+  }//add
 
 
-  editTask(listIndex, taskIndex, task) {
+  edit(type, title, listIndex, taskIndex?) {
+
+    this.subscription = this.openDialog({ type: type, operation: "edit", title: title })
+      .subscribe(result => {
+        if (result && type == "list") {
+          const listObj = this.lists[listIndex];
+          listObj.title = result;
+          this.lists.splice(listIndex, 1, listObj)
+        } else if (result && type == "task") {
+          this.lists[listIndex].items.splice(taskIndex, 1, result);
+
+        }
+      });
+
+
+  }//edit
+
+
+
+
+  openDialog(data): Observable<any> {
 
     const dialogRef = this.dialog.open(DataDialogComponent, {
       width: '250px',
-      data: { type: "task", operation: "edit", title: task }
+      data: { lists: this.lists, ...data }
     });
+    if (this.subscription) this.subscription.unsubscribe();
+    return dialogRef.afterClosed();
 
-    dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed');
-      console.log("result", result);
 
-      if (result) {
-        this.lists[listIndex].items.splice(taskIndex, 1, result);
-      }
-
-    });
-
-  }//editTask
+  }//openDialog
 
 
 
-  deleteList(index: number) {
+
+  delete(type, listIndex: number, taskIndex?: number) {
     Swal.fire({
-      title: 'Are you sure want to delete list?',
-      text: 'You will not be able to recover this list!',
+      title: `Are you sure want to delete ${type}?`,
+      text: `You will not be able to recover this ${type}!`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Yes, delete it!',
       cancelButtonText: 'No, keep it'
     }).then((result) => {
       if (result.value) {
-        this.lists.splice(index, 1);
+        if (type == "list")
+          this.lists.splice(listIndex, 1);
+        else
+          this.lists[listIndex].items.splice(taskIndex, 1);
         Swal.fire(
           'Deleted!',
-          'Your list has been deleted.',
+          `Your ${type} has been deleted.`,
           'success'
         )
-       
+
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         Swal.fire(
           'Cancelled',
-          'Your list is safe :)',
+          `Your ${type} is safe :)`,
           'error'
         )
       }
     })
-  }
+  }//delete
 
-  deleteTask(listIndex: number, taskIndex: number) {
-    Swal.fire({
-      title: 'Are you sure want to delete task?',
-      text: 'You will not be able to recover this task!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'No, keep it'
-    }).then((result) => {
-      if (result.value) {
-        this.lists[listIndex].items.splice(taskIndex, 1);
-        Swal.fire(
-          'Deleted!',
-          'Your task has been deleted.',
-          'success'
-        )
-        // For more information about handling dismissals please visit
-        // https://sweetalert2.github.io/#handling-dismissals
-      } else if (result.dismiss === Swal.DismissReason.cancel) {
-        Swal.fire(
-          'Cancelled',
-          'Your task is safe :)',
-          'error'
-        )
-      }
-    })
-
-  }
 
 
   drop(event: CdkDragDrop<any>) {
@@ -170,6 +126,10 @@ export class TodoListComponent {
         event.previousIndex,
         event.currentIndex);
     }
+  }//drop
+
+  onDestroy() {
+    this.subscription.unsubscribe();
   }
 }
 

@@ -3,12 +3,11 @@
 
 
     <mat-label>Enter {{data.type=="list"?"List":"Task"}} Title</mat-label>
-    <input matInput [(ngModel)]="data.title" #title="ngModel" required cdkFocusInitial>
+    <input matInput [(ngModel)]="data.title" #title="ngModel" required (keyup)="validate()">
+    <p *ngIf="isDuplicate" style="color: red">The {{data.type=="list"?"List":"Task"}} already exists</p>
 
 </div>
 <div mat-dialog-actions>
     <button mat-button (click)="onNoClick()">Cancel</button>
-    <button mat-button [mat-dialog-close]="data.title" 
-    cdkFocusInitial [disabled]="title?.errors?.required">
-    {{data.operation=="edit"?"Update":"Create"}} {{data.type=="list"?"List":"Task"}}</button>
+    <button mat-button [mat-dialog-close]="data.title" cdkFocusInitial [disabled]="title?.errors?.required || isDuplicate">{{data.operation=="edit"?"Update":"Create"}} {{data.type=="list"?"List":"Task"}}</button>
 </div>

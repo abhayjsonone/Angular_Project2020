@@ -1,28 +1,28 @@
-<button title = "Click for enter the new list" mat-raised-button color="danger" (click)="addList()">
+<button mat-raised-button color="danger" (click)="add('list')">
     Add List</button>
 <ng-keyboard-shortcuts [shortcuts]="shortcuts"></ng-keyboard-shortcuts>
 <div cdkDropListGroup>
     <!-- All lists in here will be connected. -->
 
     <div cdkDrag class="example-container" *ngFor="let list of lists; let i=index">
-        <span class="material-icons" (click)="editList(i, list.title)">
+        <span class="material-icons" (click)="edit('list',list.title, i)">
             edit
         </span>
-        <span class="material-icons" (click)="deleteList(i)">
+        <span class="material-icons" (click)="delete('list',i)">
             delete
         </span>
         <h2>{{list.title}}</h2>
 
         <div cdkDropList [cdkDropListData]="list" class="example-list" (cdkDropListDropped)="drop($event)">
 
-         
+            <!-- <div class="example-box" *ngFor="let item of list.items" cdkDrag>{{item}}</div> -->
             <mat-card class="example-box" *ngFor="let item of list.items; let ind = index" cdkDrag>
 
                 <p>
-                    <span class="material-icons" (click)="editTask(i, ind, item)">
+                    <span class="material-icons" (click)="edit('task',item, i, ind)">
                         edit
                     </span>
-                    <span class="material-icons" (click)="deleteTask(i, ind)">
+                    <span class="material-icons" (click)="delete('task',i, ind)">
                         delete
                     </span>
                 </p>
@@ -31,7 +31,7 @@
                     <p>{{item}}</p>
                 </mat-card-content>
             </mat-card>
-            <button (click)="addTask(i)">
+            <button (click)="add('task',i)">
                 <span class="material-icons">
                     note_add
                 </span>
